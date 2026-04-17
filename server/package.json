@@ -1,0 +1,21 @@
+{
+  "name": "com.event-designer.server",
+  "version": "0.0.1",
+  "description": "",
+  "homepage": "https://github.com/Kamehameha137/Practica#readme",
+  "bugs": {
+    "url": "https://github.com/Kamehameha137/Practica/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Kamehameha137/Practica.git"
+  },
+  "license": "MIT",
+  "author": "xc.ananas & kamehameha137",
+  "type": "module",
+  "main": "index.js",
+  "scripts": {
+    "start": "npm run src/index.js",
+    "test": "echo \"Error: no test specified\""
+  }
+}

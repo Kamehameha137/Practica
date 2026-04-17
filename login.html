@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Вход · EventDesign</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <div class="auth-page">
+        <!-- Левая часть — визуальная -->
+        <div class="auth-visual">
+            <div class="auth-visual-logo">
+                EventDesign<span style="color: #6BAA8A;">.</span>
+            </div>
+
+            <div class="auth-visual-content">
+                <h1>Организуйте события, <em>которые помнят.</em></h1>
+                <p>Планируйте мероприятия, управляйте категориями и формируйте отчёты — всё в одном элегантном пространстве.</p>
+            </div>
+
+            <div class="auth-visual-footer">
+                <span>© 2026 EventDesign</span>
+                <span>Версия 1.0</span>
+            </div>
+        </div>
+
+        <!-- Правая часть — форма -->
+        <div class="auth-form-wrap">
+            <div class="auth-form-inner fade-up">
+                <h2>Добро пожаловать</h2>
+                <p class="subtitle">Войдите в аккаунт или создайте новый, чтобы начать планировать мероприятия.</p>
+
+                <!-- Переключатель между входом и регистрацией -->
+                <div class="auth-tabs">
+                    <button class="auth-tab active" data-tab="login">Вход</button>
+                    <button class="auth-tab" data-tab="register">Регистрация</button>
+                </div>
+
+                <!-- Форма входа -->
+                <form id="loginForm" class="auth-form">
+                    <div class="form-group">
+                        <label class="form-label" for="login-email">Email</label>
+                        <input type="email" id="login-email" class="form-input" placeholder="your@email.com" required>
+                        <div class="form-error">Введите корректный email</div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label" for="login-password">Пароль</label>
+                        <input type="password" id="login-password" class="form-input" placeholder="••••••••" required>
+                        <div class="form-error">Пароль должен быть не менее 6 символов</div>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary btn-full">
+                        Войти
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <line x1="5" y1="12" x2="19" y2="12"/>
+                            <polyline points="12 5 19 12 12 19"/>
+                        </svg>
+                    </button>
+
+                    <div class="auth-divider">или</div>
+
+                    <p style="text-align: center; color: var(--text-muted); font-size: 0.85rem;">
+                        Попробовать с демо-аккаунтом: <br>
+                        <strong style="color: var(--text-secondary);">demo@eventdesign.ru</strong> / <strong style="color: var(--text-secondary);">demo1234</strong>
+                    </p>
+                </form>
+
+                <!-- Форма регистрации -->
+                <form id="registerForm" class="auth-form" style="display: none;">
+                    <div class="form-group">
+                        <label class="form-label" for="register-name">Имя</label>
+                        <input type="text" id="register-name" class="form-input" placeholder="Иван Иванов" required>
+                        <div class="form-error">Введите имя</div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label" for="register-email">Email</label>
+                        <input type="email" id="register-email" class="form-input" placeholder="your@email.com" required>
+                        <div class="form-error">Введите корректный email</div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label" for="register-password">Пароль</label>
+                        <input type="password" id="register-password" class="form-input" placeholder="Минимум 6 символов" required>
+                        <div class="form-error">Пароль должен быть не менее 6 символов</div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label" for="register-password-confirm">Повторите пароль</label>
+                        <input type="password" id="register-password-confirm" class="form-input" placeholder="••••••••" required>
+                        <div class="form-error">Пароли не совпадают</div>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary btn-full">
+                        Создать аккаунт
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <line x1="5" y1="12" x2="19" y2="12"/>
+                            <polyline points="12 5 19 12 12 19"/>
+                        </svg>
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/storage.js"></script>
+    <script src="js/ui.js"></script>
+    <script>
+        // Редирект если уже авторизован
+        UI.redirectIfAuth();
+
+        // Переключение вкладок
+        const tabs = document.querySelectorAll('.auth-tab');
+        const loginForm = document.getElementById('loginForm');
+        const registerForm = document.getElementById('registerForm');
+
+        tabs.forEach(tab => {
+            tab.addEventListener('click', () => {
+                tabs.forEach(t => t.classList.remove('active'));
+                tab.classList.add('active');
+
+                if (tab.dataset.tab === 'login') {
+                    loginForm.style.display = 'block';
+                    registerForm.style.display = 'none';
+                } else {
+                    loginForm.style.display = 'none';
+                    registerForm.style.display = 'block';
+                }
+            });
+        });
+
+        // Валидация email
+        function isValidEmail(email) {
+            return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+        }
+
+        // Вход
+        loginForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const email = document.getElementById('login-email').value.trim();
+            const password = document.getElementById('login-password').value;
+
+            // Сброс ошибок
+            loginForm.querySelectorAll('.form-group').forEach(g => g.classList.remove('has-error'));
+
+            let valid = true;
+            if (!isValidEmail(email)) {
+                document.getElementById('login-email').closest('.form-group').classList.add('has-error');
+                valid = false;
+            }
+            if (password.length < 6) {
+                document.getElementById('login-password').closest('.form-group').classList.add('has-error');
+                valid = false;
+            }
+            if (!valid) return;
+
+            const result = Storage.loginUser(email, password);
+            if (result.success) {
+                UI.toast('Добро пожаловать, ' + result.user.name + '!');
+                setTimeout(() => window.location.href = 'index.html', 600);
+            } else {
+                UI.toast(result.error, 'error');
+            }
+        });
+
+        // Регистрация
+        registerForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const name = document.getElementById('register-name').value.trim();
+            const email = document.getElementById('register-email').value.trim();
+            const password = document.getElementById('register-password').value;
+            const passwordConfirm = document.getElementById('register-password-confirm').value;
+
+            registerForm.querySelectorAll('.form-group').forEach(g => g.classList.remove('has-error'));
+
+            let valid = true;
+            if (name.length < 2) {
+                document.getElementById('register-name').closest('.form-group').classList.add('has-error');
+                valid = false;
+            }
+            if (!isValidEmail(email)) {
+                document.getElementById('register-email').closest('.form-group').classList.add('has-error');
+                valid = false;
+            }
+            if (password.length < 6) {
+                document.getElementById('register-password').closest('.form-group').classList.add('has-error');
+                valid = false;
+            }
+            if (password !== passwordConfirm) {
+                document.getElementById('register-password-confirm').closest('.form-group').classList.add('has-error');
+                valid = false;
+            }
+            if (!valid) return;
+
+            const result = Storage.registerUser({ name, email, password });
+            if (result.success) {
+                UI.toast('Аккаунт создан! Добро пожаловать.');
+                setTimeout(() => window.location.href = 'index.html', 600);
+            } else {
+                UI.toast(result.error, 'error');
+            }
+        });
+    </script>
+</body>
+</html>

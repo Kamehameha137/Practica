@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Новое мероприятие · EventDesign</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <div id="navbar-container"></div>
+
+    <div class="container-medium">
+        <!-- Заголовок -->
+        <div class="page-header fade-up" style="margin-bottom: 32px;">
+            <div class="page-header-text">
+                <a href="index.html" style="display: inline-flex; align-items: center; gap: 6px; color: var(--text-secondary); font-size: 0.85rem; margin-bottom: 12px;">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="19" y1="12" x2="5" y2="12"/>
+                        <polyline points="12 19 5 12 12 5"/>
+                    </svg>
+                    К списку мероприятий
+                </a>
+                <h1 id="pageTitle">Новое <span class="italic-accent">мероприятие.</span></h1>
+            </div>
+        </div>
+
+        <form id="eventForm" class="fade-up">
+            <div class="form-card">
+                <!-- Основная информация -->
+                <div class="form-section">
+                    <h3 class="form-section-title">Основное</h3>
+                    <p class="form-section-subtitle">Название и описание вашего мероприятия</p>
+
+                    <div class="form-group">
+                        <label class="form-label" for="title">Название мероприятия *</label>
+                        <input type="text" id="title" class="form-input" placeholder="Например: Весенняя конференция 2026" required>
+                        <div class="form-error">Введите название</div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label" for="description">Описание</label>
+                        <textarea id="description" class="form-textarea" placeholder="Краткое описание, цели и особенности мероприятия..."></textarea>
+                        <div class="form-hint">Рекомендуем 2-3 предложения, чтобы было понятно о чём речь</div>
+                    </div>
+                </div>
+
+                <!-- Категория -->
+                <div class="form-section">
+                    <h3 class="form-section-title">Категория</h3>
+                    <p class="form-section-subtitle">Выберите тип мероприятия</p>
+
+                    <div class="category-selector" id="categorySelector">
+                        <label class="category-option">
+                            <input type="radio" name="category" value="Конференция">
+                            <span class="category-option-label">Конференция</span>
+                        </label>
+                        <label class="category-option">
+                            <input type="radio" name="category" value="Корпоратив">
+                            <span class="category-option-label">Корпоратив</span>
+                        </label>
+                        <label class="category-option">
+                            <input type="radio" name="category" value="Мастер-класс">
+                            <span class="category-option-label">Мастер-класс</span>
+                        </label>
+                        <label class="category-option">
+                            <input type="radio" name="category" value="Свадьба">
+                            <span class="category-option-label">Свадьба</span>
+                        </label>
+                        <label class="category-option">
+                            <input type="radio" name="category" value="Презентация">
+                            <span class="category-option-label">Презентация</span>
+                        </label>
+                        <label class="category-option">
+                            <input type="radio" name="category" value="Другое">
+                            <span class="category-option-label">Другое</span>
+                        </label>
+                    </div>
+                    <div class="form-error" id="categoryError" style="display: none;">Выберите категорию</div>
+                </div>
+
+                <!-- Дата и место -->
+                <div class="form-section">
+                    <h3 class="form-section-title">Дата и место</h3>
+                    <p class="form-section-subtitle">Когда и где пройдёт мероприятие</p>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label" for="date">Дата *</label>
+                            <input type="date" id="date" class="form-input" required>
+                            <div class="form-error">Укажите дату</div>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label" for="time">Время</label>
+                            <input type="time" id="time" class="form-input">
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label" for="location">Место проведения</label>
+                        <input type="text" id="location" class="form-input" placeholder="Город, адрес или название площадки">
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label" for="capacity">Вместимость (количество участников)</label>
+                        <input type="number" id="capacity" class="form-input" placeholder="Например: 100" min="1">
+                        <div class="form-hint">Оставьте пустым, если нет ограничений</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Кнопки действий -->
+            <div class="form-actions">
+                <button type="button" class="btn btn-danger" id="deleteBtn" style="display: none;">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="3 6 5 6 21 6"/>
+                        <path d="M19 6l-2 14a2 2 0 0 1-2 2H9a2 2 0 0 1-2-2L5 6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+                    </svg>
+                    Удалить
+                </button>
+                <div class="form-actions-end">
+                    <a href="index.html" class="btn btn-secondary">Отмена</a>
+                    <button type="submit" class="btn btn-primary" id="submitBtn">
+                        Сохранить
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="20 6 9 17 4 12"/>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
+
+    <script src="js/storage.js"></script>
+    <script src="js/ui.js"></script>
+    <script>
+        // Проверка авторизации
+        const user = UI.requireAuth();
+        if (!user) throw new Error('Not authenticated');
+
+        // Рендер навбара
+        document.getElementById('navbar-container').innerHTML = UI.renderNavbar('create');
+        UI.updateThemeIcon(Storage.getTheme());
+
+        // Определяем режим: создание или редактирование
+        const urlParams = new URLSearchParams(window.location.search);
+        const editId = urlParams.get('id');
+        const isEdit = !!editId;
+
+        if (isEdit) {
+            const event = Storage.getEventById(editId);
+            if (!event || event.userId !== user.id) {
+                UI.toast('Мероприятие не найдено', 'error');
+                setTimeout(() => window.location.href = 'index.html', 1000);
+                throw new Error('Event not found');
+            }
+
+            // Заполняем форму
+            document.title = 'Редактирование · EventDesign';
+            document.getElementById('pageTitle').innerHTML = 'Редактировать <span class="italic-accent">мероприятие.</span>';
+            document.getElementById('title').value = event.title || '';
+            document.getElementById('description').value = event.description || '';
+            document.getElementById('date').value = event.date || '';
+            document.getElementById('time').value = event.time || '';
+            document.getElementById('location').value = event.location || '';
+            document.getElementById('capacity').value = event.capacity || '';
+
+            const categoryRadio = document.querySelector(`input[name="category"][value="${event.category}"]`);
+            if (categoryRadio) categoryRadio.checked = true;
+
+            // Показываем кнопку удаления
+            document.getElementById('deleteBtn').style.display = 'inline-flex';
+            document.getElementById('deleteBtn').addEventListener('click', () => {
+                UI.confirm('Удалить мероприятие?', 'Это действие нельзя отменить.', () => {
+                    Storage.deleteEvent(editId);
+                    UI.toast('Мероприятие удалено');
+                    setTimeout(() => window.location.href = 'index.html', 600);
+                });
+            });
+        }
+
+        // Submit формы
+        document.getElementById('eventForm').addEventListener('submit', (e) => {
+            e.preventDefault();
+
+            // Сброс ошибок
+            document.querySelectorAll('.form-group').forEach(g => g.classList.remove('has-error'));
+            document.getElementById('categoryError').style.display = 'none';
+
+            const title = document.getElementById('title').value.trim();
+            const description = document.getElementById('description').value.trim();
+            const date = document.getElementById('date').value;
+            const time = document.getElementById('time').value;
+            const location = document.getElementById('location').value.trim();
+            const capacity = document.getElementById('capacity').value;
+            const categoryRadio = document.querySelector('input[name="category"]:checked');
+
+            let valid = true;
+            if (!title) {
+                document.getElementById('title').closest('.form-group').classList.add('has-error');
+                valid = false;
+            }
+            if (!categoryRadio) {
+                document.getElementById('categoryError').style.display = 'block';
+                valid = false;
+            }
+            if (!date) {
+                document.getElementById('date').closest('.form-group').classList.add('has-error');
+                valid = false;
+            }
+
+            if (!valid) {
+                UI.toast('Проверьте заполнение формы', 'error');
+                return;
+            }
+
+            const eventData = {
+                title,
+                description,
+                category: categoryRadio.value,
+                date,
+                time,
+                location,
+                capacity: capacity ? parseInt(capacity) : null
+            };
+
+            let result;
+            if (isEdit) {
+                result = Storage.updateEvent(editId, eventData);
+            } else {
+                result = Storage.createEvent(eventData);
+            }
+
+            if (result.success) {
+                UI.toast(isEdit ? 'Изменения сохранены' : 'Мероприятие создано!');
+                setTimeout(() => window.location.href = 'index.html', 600);
+            } else {
+                UI.toast(result.error, 'error');
+            }
+        });
+
+        // При выборе категории убираем ошибку
+        document.getElementById('categorySelector').addEventListener('change', () => {
+            document.getElementById('categoryError').style.display = 'none';
+        });
+    </script>
+</body>
+</html>

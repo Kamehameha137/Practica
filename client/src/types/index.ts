@@ -2,13 +2,12 @@ export interface User {
   id: number;
   name: string;
   email: string;
-  password: string;
   createdAt: string;
 }
 
 export interface Event {
   id: number;
-  userId: number;
+  userId?: number;
   title: string;
   description?: string;
   category: string;
@@ -17,7 +16,8 @@ export interface Event {
   location?: string;
   capacity?: number | null;
   status?: 'upcoming' | 'active' | 'completed';
-  createdAt: string;
+  isExample?: boolean;
+  createdAt?: string;
 }
 
 export type ToastType = 'success' | 'error';
@@ -26,4 +26,10 @@ export interface Toast {
   id: number;
   message: string;
   type: ToastType;
+}
+
+export interface ApiResponse<T = unknown> {
+  success: boolean;
+  error?: string;
+  data?: T;
 }

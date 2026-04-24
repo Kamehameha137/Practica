@@ -5,8 +5,11 @@ import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { ArrowLeft, Check, Trash2 } from 'lucide-react';
 import { Link } from '@tanstack/react-router';
+import { api } from '../lib/api';
 import { Storage } from '../lib/storage';
-import type { Event } from '../types';
+import { Input } from '../components/ui/Input';
+import { Textarea } from '../components/ui/Textarea';
+import { Badge } from '../components/ui/Badge';
 
 const CATEGORIES = ['Конференция', 'Корпоратив', 'Мастер-класс', 'Свадьба', 'Презентация', 'Другое'];
 
@@ -17,7 +20,7 @@ const eventSchema = z.object({
   date: z.string().min(1, 'Укажите дату'),
   time: z.string().optional(),
   location: z.string().optional(),
-  capacity: z.number().int().positive().nullable().optional(),
+  capacity: z.number().int().positive('Вместимость должна быть положительным числом').nullable().optional(),
 });
 
 type EventFormData = z.infer<typeof eventSchema>;
@@ -26,6 +29,8 @@ export default function CreateEventPage() {
   const navigate = useNavigate();
   const search = useSearch({ strict: false }) as { id?: string };
   const [isEdit, setIsEdit] = useState(false);
+  const [isExample, setIsExample] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
 
   const form = useForm<EventFormData>({
     resolver: zodResolver(eventSchema),
@@ -42,48 +47,102 @@ export default function CreateEventPage() {
 
   useEffect(() => {
     if (search.id) {
+      const id = Number(search.id);
       setIsEdit(true);
-      const event = Storage.getEventById(Number(search.id));
-      if (event) {
-        form.reset({
-          title: event.title,
-          description: event.description || '',
-          category: event.category,
-          date: event.date,
-          time: event.time || '',
-          location: event.location || '',
-          capacity: event.capacity || null,
-        });
+
+      // Если это mock (id < 0) — берём из localStorage
+      if (id < 0) {
+        const mocks = Storage.getMockEvents();
+        const mock = mocks.find(m => m.id === id);
+        if (mock) {
+          setIsExample(true);
+          form.reset({
+            title: mock.title,
+            description: mock.description || '',
+            category: mock.category,
+            date: mock.date,
+            time: mock.time || '',
+            location: mock.location || '',
+            capacity: mock.capacity || null,
+          });
+        }
+        return;
       }
+
+      // Иначе — с сервера
+      api.getEvent(id).then((data) => {
+        if (data.success && data.event) {
+          const e = data.event;
+          form.reset({
+            title: e.title,
+            description: e.description || '',
+            category: e.category,
+            date: e.date,
+            time: e.time || '',
+            location: e.location || '',
+            capacity: e.capacity || null,
+          });
+        }
+      });
     }
   }, [search.id, form]);
 
-  const onSubmit = (data: EventFormData) => {
-    const eventData = {
-      ...data,
-      capacity: data.capacity || null,
-    };
+  const onSubmit = async (data: EventFormData) => {
+    setIsLoading(true);
+    try {
+      const payload = {
+        ...data,
+        capacity: data.capacity === null ? null : Number(data.capacity),
+      };
 
-    let result;
-    if (isEdit && search.id) {
-      result = Storage.updateEvent(Number(search.id), eventData);
-    } else {
-      result = Storage.createEvent(eventData);
-    }
+      let result;
+      if (isEdit && search.id) {
+        const id = Number(search.id);
+        if (id < 0) {
+          // Обновляем mock в localStorage
+          const mocks = Storage.getMockEvents();
+          const idx = mocks.findIndex(m => m.id === id);
+          if (idx !== -1) {
+            mocks[idx] = { ...mocks[idx], ...payload };
+            Storage.setMockEvents(mocks);
+            navigate({ to: '/' });
+            return;
+          }
+        }
+        result = await api.updateEvent(id, payload);
+      } else {
+        result = await api.createEvent(payload);
+      }
 
-    if (result.success) {
-      alert(isEdit ? 'Изменения сохранены' : 'Мероприятие создано!');
-      navigate({ to: '/' });
-    } else {
-      alert(result.error);
+      if (result?.success) {
+        navigate({ to: '/' });
+      } else {
+        alert(result?.error || 'Ошибка сохранения');
+      }
+    } finally {
+      setIsLoading(false);
     }
   };
 
-  const handleDelete = () => {
-    if (confirm('Удалить мероприятие? Это действие нельзя отменить.') && search.id) {
-      Storage.deleteEvent(Number(search.id));
-      alert('Мероприятие удалено');
+  const handleDelete = async () => {
+    if (!confirm('Удалить мероприятие? Это действие нельзя отменить.') || !search.id) return;
+    const id = Number(search.id);
+
+    if (id < 0) {
+      Storage.removeMockEvent(id);
       navigate({ to: '/' });
+      return;
+    }
+
+    try {
+      const data = await api.deleteEvent(id);
+      if (data.success) {
+        navigate({ to: '/' });
+      } else {
+        alert(data.error || 'Ошибка удаления');
+      }
+    } catch {
+      alert('Ошибка при удалении');
     }
   };
 
@@ -91,12 +150,23 @@ export default function CreateEventPage() {
     <div className="container-medium">
       <div className="page-header fade-up" style={{ marginBottom: '32px' }}>
         <div className="page-header-text">
-          <Link to="/" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', color: 'var(--text-secondary)', fontSize: '0.85rem', marginBottom: '12px' }}>
+          <Link
+            to="/"
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '6px',
+              color: 'var(--text-secondary)',
+              fontSize: '0.85rem',
+              marginBottom: '12px',
+            }}
+          >
             <ArrowLeft size={14} />
             К списку мероприятий
           </Link>
           <h1>
             {isEdit ? 'Редактировать' : 'Новое'} <span className="italic-accent">мероприятие.</span>
+            {isExample && <Badge variant="example" className="ml-2">ПРИМЕР</Badge>}
           </h1>
         </div>
       </div>
@@ -107,28 +177,21 @@ export default function CreateEventPage() {
             <h3 className="form-section-title">Основное</h3>
             <p className="form-section-subtitle">Название и описание вашего мероприятия</p>
 
-            <div className={`form-group ${form.formState.errors.title ? 'has-error' : ''}`}>
-              <label className="form-label" htmlFor="title">Название мероприятия *</label>
-              <input
-                type="text"
-                id="title"
-                className="form-input"
-                placeholder="Например: Весенняя конференция 2026"
-                {...form.register('title')}
-              />
-              <div className="form-error">{form.formState.errors.title?.message}</div>
-            </div>
+            <Input
+              id="title"
+              label="Название мероприятия *"
+              placeholder="Например: Весенняя конференция 2026"
+              error={form.formState.errors.title?.message}
+              {...form.register('title')}
+            />
 
-            <div className="form-group">
-              <label className="form-label" htmlFor="description">Описание</label>
-              <textarea
-                id="description"
-                className="form-textarea"
-                placeholder="Краткое описание, цели и особенности мероприятия..."
-                {...form.register('description')}
-              />
-              <div className="form-hint">Рекомендуем 2-3 предложения, чтобы было понятно о чём речь</div>
-            </div>
+            <Textarea
+              id="description"
+              label="Описание"
+              placeholder="Краткое описание, цели и особенности мероприятия..."
+              hint="Рекомендуем 2-3 предложения, чтобы было понятно о чём речь"
+              {...form.register('description')}
+            />
           </div>
 
           <div className="form-section">
@@ -136,11 +199,10 @@ export default function CreateEventPage() {
             <p className="form-section-subtitle">Выберите тип мероприятия</p>
 
             <div className="category-selector">
-              {CATEGORIES.map(cat => (
+              {CATEGORIES.map((cat) => (
                 <label className="category-option" key={cat}>
                   <input
                     type="radio"
-                    name="category"
                     value={cat}
                     {...form.register('category')}
                   />
@@ -160,50 +222,38 @@ export default function CreateEventPage() {
             <p className="form-section-subtitle">Когда и где пройдёт мероприятие</p>
 
             <div className="form-row">
-              <div className={`form-group ${form.formState.errors.date ? 'has-error' : ''}`}>
-                <label className="form-label" htmlFor="date">Дата *</label>
-                <input
-                  type="date"
-                  id="date"
-                  className="form-input"
-                  {...form.register('date')}
-                />
-                <div className="form-error">{form.formState.errors.date?.message}</div>
-              </div>
-              <div className="form-group">
-                <label className="form-label" htmlFor="time">Время</label>
-                <input
-                  type="time"
-                  id="time"
-                  className="form-input"
-                  {...form.register('time')}
-                />
-              </div>
-            </div>
-
-            <div className="form-group">
-              <label className="form-label" htmlFor="location">Место проведения</label>
-              <input
-                type="text"
-                id="location"
-                className="form-input"
-                placeholder="Город, адрес или название площадки"
-                {...form.register('location')}
+              <Input
+                id="date"
+                type="date"
+                label="Дата *"
+                error={form.formState.errors.date?.message}
+                {...form.register('date')}
+              />
+              <Input
+                id="time"
+                type="time"
+                label="Время"
+                {...form.register('time')}
               />
             </div>
 
-            <div className="form-group">
-              <label className="form-label" htmlFor="capacity">Вместимость (количество участников)</label>
-              <input
-                type="number"
-                id="capacity"
-                className="form-input"
-                placeholder="Например: 100"
-                min="1"
-                {...form.register('capacity', { valueAsNumber: true })}
-              />
-              <div className="form-hint">Оставьте пустым, если нет ограничений</div>
-            </div>
+            <Input
+              id="location"
+              label="Место проведения"
+              placeholder="Город, адрес или название площадки"
+              {...form.register('location')}
+            />
+
+            <Input
+              id="capacity"
+              type="number"
+              label="Вместимость (количество участников)"
+              placeholder="Например: 100"
+              hint="Оставьте пустым, если нет ограничений"
+              {...form.register('capacity', {
+                setValueAs: (val) => (val === '' || val === null || val === undefined ? null : Number(val)),
+              })}
+            />
           </div>
         </div>
 
@@ -216,8 +266,8 @@ export default function CreateEventPage() {
           )}
           <div className="form-actions-end">
             <Link to="/" className="btn btn-secondary">Отмена</Link>
-            <button type="submit" className="btn btn-primary">
-              Сохранить
+            <button type="submit" className="btn btn-primary" disabled={isLoading}>
+              {isLoading ? 'Сохранение...' : 'Сохранить'}
               <Check size={16} />
             </button>
           </div>

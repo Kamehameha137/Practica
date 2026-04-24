@@ -25,11 +25,18 @@ const loginRoute = createRouteFunc({
   component: LoginPage,
 });
 
+const settingsRoute = createRouteFunc({
+  getParentRoute: () => rootRoute,
+  path: '/settings',
+  component: () => import('./routes/settings.lazy').then(mod => <mod.default />),
+});
+
 // Создаём роутер
 const routeTree = rootRoute.addChildren([
   indexRoute,
   createRoute,
   loginRoute,
+  settingsRoute,
 ]);
 
 const router = createRouter({

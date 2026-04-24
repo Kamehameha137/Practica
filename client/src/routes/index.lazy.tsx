@@ -1,55 +1,92 @@
 import { useState, useEffect } from 'react';
 import { Link, useNavigate } from '@tanstack/react-router';
-import { Search, Plus, Trash2, Calendar, MapPin } from 'lucide-react';
+import { Plus, Search } from 'lucide-react';
+import { api } from '../lib/api';
 import { Storage } from '../lib/storage';
-import { formatDate, getEventStatus, getStatusLabel } from '../lib/utils';
+import { PageHeader } from '../components/layout/PageHeader';
+import { EventCard } from '../components/events/EventCard';
+import { EmptyState } from '../components/events/EmptyState';
 import type { Event } from '../types';
 
-const CATEGORIES = ['all', 'Конференция', 'Корпоратив', 'Мастер-класс', 'Свадьба', 'Презентация'];
+const CATEGORIES = ['all', 'Конференция', 'Корпоратив', 'Мастер-класс', 'Свадьба', 'Презентация', 'Другое'];
 
 export default function EventsPage() {
   const navigate = useNavigate();
   const [events, setEvents] = useState<Event[]>([]);
   const [search, setSearch] = useState('');
   const [activeCategory, setActiveCategory] = useState('all');
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     loadEvents();
   }, []);
 
-  const loadEvents = () => {
-    setEvents(Storage.getUserEvents());
+  const loadEvents = async () => {
+    setLoading(true);
+    try {
+      const data = await api.getEvents();
+      if (data.success) {
+        const serverEvents: Event[] = data.events || [];
+        // Если на сервере нет ивентов — подтягиваем mock из localStorage
+        if (serverEvents.length === 0) {
+          const mocks = Storage.getMockEvents();
+          setEvents(mocks);
+        } else {
+          setEvents(serverEvents);
+        }
+      }
+    } catch (err) {
+      console.error('Ошибка загрузки ивентов:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDelete = async (id: number, e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!confirm('Удалить мероприятие? Это действие нельзя отменить.')) return;
+
+    // Если это mock — удаляем из localStorage
+    if (id < 0) {
+      Storage.removeMockEvent(id);
+      setEvents(prev => prev.filter(ev => ev.id !== id));
+      return;
+    }
+
+    // Иначе — с сервера
+    try {
+      const data = await api.deleteEvent(id);
+      if (data.success) {
+        setEvents((prev) => prev.filter((ev) => ev.id !== id));
+      } else {
+        alert(data.error || 'Ошибка удаления');
+      }
+    } catch (err) {
+      alert('Ошибка при удалении');
+    }
   };
 
   const filteredEvents = events
-    .filter(e => activeCategory === 'all' || e.category === activeCategory)
-    .filter(e => 
-      search === '' || 
+    .filter((e) => activeCategory === 'all' || e.category === activeCategory)
+    .filter((e) =>
+      search === '' ||
       e.title.toLowerCase().includes(search.toLowerCase()) ||
       (e.description && e.description.toLowerCase().includes(search.toLowerCase()))
     )
     .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
 
-  const handleDelete = (id: number, e: React.MouseEvent) => {
-    e.stopPropagation();
-    if (confirm('Удалить мероприятие? Это действие нельзя отменить.')) {
-      Storage.deleteEvent(id);
-      loadEvents();
-    }
-  };
-
   return (
     <div className="container">
-      <div className="page-header fade-up">
-        <div className="page-header-text">
-          <span className="eyebrow">Ваши события</span>
-          <h1>Мероприятия, <span className="italic-accent">которые вы создаёте.</span></h1>
-        </div>
-        <Link to="/create" className="btn btn-primary">
-          <Plus size={16} />
-          Новое мероприятие
-        </Link>
-      </div>
+      <PageHeader
+        eyebrow="Ваши события"
+        title={<>Мероприятия, <span className="italic-accent">которые вы создаёте.</span></>}
+        action={
+          <Link to="/create" className="btn btn-primary">
+            <Plus size={16} />
+            Новое мероприятие
+          </Link>
+        }
+      />
 
       <div className="filters fade-up">
         <div className="search-wrap">
@@ -64,7 +101,7 @@ export default function EventsPage() {
         </div>
 
         <div className="filter-chips">
-          {CATEGORIES.map(cat => (
+          {CATEGORIES.map((cat) => (
             <button
               key={cat}
               className={`chip ${activeCategory === cat ? 'active' : ''}`}
@@ -76,63 +113,24 @@ export default function EventsPage() {
         </div>
       </div>
 
-      {filteredEvents.length === 0 ? (
+      {loading ? (
         <div className="empty-state">
-          <div className="empty-state-icon">◌</div>
-          <h3>Мероприятий пока нет</h3>
-          <p style={{ marginBottom: '24px' }}>Создайте первое мероприятие, чтобы начать планировать</p>
-          <Link to="/create" className="btn btn-primary">
-            Создать мероприятие
-          </Link>
+          <div className="empty-state-icon" style={{ animation: 'spin 1s linear infinite' }}>◌</div>
+          <h3>Загрузка...</h3>
         </div>
+      ) : filteredEvents.length === 0 ? (
+        <EmptyState hasSearch={search !== '' || activeCategory !== 'all'} />
       ) : (
         <div className="events-grid">
-          {filteredEvents.map((event, index) => {
-            const status = getEventStatus(event);
-            return (
-              <div
-                key={event.id}
-                className="event-card"
-                onClick={() => navigate({ to: '/create', search: { id: event.id } })}
-                style={{ animationDelay: `${index * 0.05}s` }}
-              >
-                <div className="event-card-header">
-                  <span className="event-category">{event.category}</span>
-                  <button
-                    className="event-menu"
-                    onClick={(e) => handleDelete(event.id, e)}
-                    title="Удалить"
-                  >
-                    <Trash2 size={16} />
-                  </button>
-                </div>
-
-                <h3 className="event-title">{event.title}</h3>
-                <p className="event-description">{event.description || 'Без описания'}</p>
-
-                <div className="event-meta">
-                  <div className="event-meta-row">
-                    <Calendar size={14} />
-                    {formatDate(event.date)}{event.time ? `, ${event.time}` : ''}
-                  </div>
-                  <div className="event-meta-row">
-                    <MapPin size={14} />
-                    {event.location || 'Место не указано'}
-                  </div>
-                  <div className="event-meta-row" style={{ justifyContent: 'space-between' }}>
-                    <span className={`event-status status-${status}`}>
-                      {getStatusLabel(status)}
-                    </span>
-                    {event.capacity && (
-                      <span style={{ color: 'var(--text-muted)', fontSize: '0.8rem' }}>
-                        {event.capacity} мест
-                      </span>
-                    )}
-                  </div>
-                </div>
-              </div>
-            );
-          })}
+          {filteredEvents.map((event, index) => (
+            <EventCard
+              key={event.id}
+              event={event}
+              index={index}
+              onClick={() => navigate({ to: '/create', search: { id: String(event.id) } })}
+              onDelete={(e) => handleDelete(event.id, e)}
+            />
+          ))}
         </div>
       )}
     </div>

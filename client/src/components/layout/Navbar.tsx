@@ -4,11 +4,13 @@ import { Sun, Moon, LogOut, Settings, FileSpreadsheet, FileText } from 'lucide-r
 import { Storage } from '../../lib/storage';
 import { api } from '../../lib/api';
 import type { User } from '../../types';
+import { useModal } from '../../routes/__root';
 
 export function Navbar() {
   const location = useLocation();
   const [user, setUser] = useState<User | null>(null);
   const [theme, setTheme] = useState(Storage.getTheme());
+  const { showModal } = useModal();
 
   useEffect(() => {
     api.me().then((data) => {
@@ -39,10 +41,8 @@ export function Navbar() {
   };
 
   const handleLogout = async () => {
-    if (confirm('Вы действительно хотите выйти?')) {
-      await api.logout();
-      window.location.href = '/login';
-    }
+    await api.logout();
+    window.location.href = '/login';
   };
 
   const handleDownload = async (format: 'xlsx' | 'pdf') => {
@@ -53,6 +53,14 @@ export function Navbar() {
     }
   };
 
+  const openLogoutModal = () => {
+    showModal({
+      title: 'Выход из системы',
+      message: 'Вы точно хотите выйти?',
+      onConfirm: handleLogout,
+    });
+  };
+  
   return (
     <nav className="navbar">
       <div className="navbar-inner">
@@ -103,7 +111,7 @@ export function Navbar() {
             </button>
           </li>
           <li>
-            <div className="user-avatar" onClick={handleLogout} title={`${user.name} — выйти`}>
+            <div className="user-avatar" onClick={openLogoutModal} title={`${user.name} — выйти`}>
               {initials}
               <LogOut size={12} className="user-avatar-icon" />
             </div>

@@ -23,10 +23,10 @@ app.use('/api', authRouter);
 app.use('/api/events', eventsRouter);
 app.use('/api/reports', reportsRouter);
 
-// Serve static files from client/dist
+//static files from client/dist
 app.use(express.static(path.join(__dirname, '../../client/dist')));
 
-// SPA fallback — serve index.html for any non-API route
+// SPA fallback -- serve index.html for any non-API route
 app.use((req, res, next) => {
   if (!req.path.startsWith('/api')) {
     res.sendFile(path.join(__dirname, '../../client/dist/index.html'));

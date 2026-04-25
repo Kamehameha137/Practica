@@ -937,7 +937,7 @@ h4 { font-size: 1.15rem; font-weight: 500; }
     bottom: 0;
     background-color: rgba(26, 29, 26, 0.5);
     backdrop-filter: blur(4px);
-    z-index: 500;
+    z-index: 9999;
     display: none;
     align-items: center;
     justify-content: center;
@@ -969,6 +969,33 @@ h4 { font-size: 1.15rem; font-weight: 500; }
 
 .modal p {
     color: var(--text-secondary);
+    margin-bottom: 24px;
+}
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 20px;
+}
+
+.modal-close {
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: var(--text-secondary);
+    padding: 4px;
+    border-radius: var(--radius-sm);
+    transition: all var(--transition);
+    margin-top: -4px;
+}
+
+.modal-close:hover {
+    background-color: var(--bg-secondary);
+    color: var(--text-primary);
+}
+
+.modal-content {
     margin-bottom: 24px;
 }
 

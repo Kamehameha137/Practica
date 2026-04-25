@@ -1,7 +1,7 @@
 import type { Event } from '../types';
 
-// const API_BASE = 'http://localhost:7878/api'; //dev
-const API_BASE = '/api'; //prod
+const API_BASE = 'http://localhost:80/api'; //dev
+// const API_BASE = '/api'; //prod
 
 let accessToken: string | null = localStorage.getItem('access_token');
 
